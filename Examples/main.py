@@ -89,7 +89,7 @@ def main():
 
         # Insert Data
         device_name = "Laptop"
-        ip_address = "192.9.0.5"
+        ip_address = "192.9.0.5up"
         insert_device(connection, device_name, ip_address)
         
         # Select Data

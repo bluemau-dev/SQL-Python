@@ -107,6 +107,7 @@ def main():
             update_user(connection, user_id, new_email)
 
         elif start == 'add many':
+            # Hardcoding Example of a List
             users = [
             ("Chandler", 20, "friends29@gmail.com"),
             ("Yoda", 29, "yoda@gmail.com"),
