@@ -1,6 +1,7 @@
 import requests
 import sqlite3
 
+# Get Book from API
 def search_book(connection):
     
     # Prompt Input
@@ -29,9 +30,7 @@ def search_book(connection):
     except requests.exceptions.RequestException as e:
         print(f"Network error: {e}")
 
-def get_book_to_database():
-    pass 
-
+# Get Author from API
 def search_author(connection):
 
     # Prompt Input
@@ -62,6 +61,7 @@ def search_author(connection):
     except requests.exceptions.RequestException as e:
         print(f"Network error: {e}")
 
+# Get Author's Collection
 def get_author_works(connection, author):
     # API Endpoint
     #url = f'https://openlibrary.org/authors/{key}/works.json'
@@ -94,28 +94,29 @@ def get_author_works(connection, author):
     except requests.exceptions.RequestException as e:
         print(f"Network error: {e}")
 
+# Get Other Book Data
 def get_book_details(connection, book): # book -> Of Mice and Men
     # book['key'] -> "/works/OL45804W"
+
+    original_book = book
     url = f"https://openlibrary.org{book['key']}.json"
     
     try:   
         response = requests.get(url)
         response.raise_for_status()
 
-        book = response.json()
+        details = response.json()
 
-        print(f"Title: {book.get('title')}")
-        print(f"Description: {book.get('description')}")
-        print(f"Subject: {book.get('subjects')}")
+        print(f"Title: {details.get('title')}")
+        print(f"Description: {details.get('description')}")
+        print(f"Subject: {details.get('subjects')}")
 
-        save = input("Save this book to database? y/n ")
-        if save.lower() == "y":
-            insert_book(connection, book)
-            print("Book saved.")
+        save_to_database(connection, original_book)
     
     except requests.exceptions.RequestException as e:
         print(f"Network error: {e}")
         
+# Create Table (One time)
 def create_table(connection):
     query = """
     CREATE TABLE IF NOT EXISTS books(
@@ -123,6 +124,7 @@ def create_table(connection):
     title TEXT,
     author TEXT,
     publish_year INTEGER,
+    cover_url TEXT,
     work_key TEXT,
     UNIQUE(title, publish_year)
     )"""
@@ -133,28 +135,59 @@ def create_table(connection):
     except Exception as e:
         print(e)
 
+# Inserts data into Database
 def insert_book(connection, book):
     query = """
-    INSERT OR IGNORE INTO books (title, author, publish_year, work_key)
-    VALUES (?,?,?,?)
+    INSERT OR IGNORE INTO books (title, author, publish_year, cover_url, work_key)
+    VALUES (?,?,?,?,?)
     """
 
     # Data -> Values
     title = book.get("title")
     author = ", ".join(book.get("author_name", []))
     publish_year = book.get("first_publish_year")
+    
+    # Saving Book Cover
+    cover_id = book.get("cover_i")
+    if cover_id:
+        cover_url = f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg"
+    else:
+        cover_url = None
+
+    print(f"Cover ID: {cover_id}")
+    print(f"Cover URL: {cover_url}")
+
+
     work_key = book.get("key")
 
     # Execute Query
     with connection:
-        connection.execute(query, (title,author,publish_year,work_key))
+        if not title or not author or not publish_year: # Validate Data
+            print("Book missing required data. Not saving.")
+            return
+        # Execute / Insert Data to Database
+        connection.execute(query, (title,author,publish_year, cover_url,work_key))
 
+# Prompt User Y/N to Save Book
 def save_to_database(connection, book):
 
     save = input("Save this book to database? y/n ")
     if save.lower() == "y":
         insert_book(connection, book)
         print("Book saved.")
+
+# Read -> View Saved Books
+def view_books(connection):
+    # View Books Table
+    query = "SELECT * FROM books;"
+
+    try: # Execute and Fetch
+        cursor = connection.execute(query) # Executes Query
+        for row in cursor.fetchall(): # Fetches Data / Rows
+            print(row)
+
+    except Exception as e:
+        print(e)
 
 def main():
     
@@ -164,16 +197,16 @@ def main():
     options = {
         1: search_book,
         2: search_author,
+        3: view_books,
     }
 
-    x = int(input("Enter one of the following:\n1.Book Name.\n2.Author's Name.\n"))
+    x = int(input("Enter one of the following:\n1. Book Name.\n2. Author's Name.\n3. View Table.\n"))
     action = options.get(x)
 
     if action:
         action(connection)
     else:
         print("Invalid option.")
-    
     
 if __name__ == '__main__':
     main()
