@@ -62,3 +62,45 @@ My next approach will be to throughly read the documentation for the API to unde
 
         a. connection.execute(query, media_id)
         b. connection.execute(query, (media_id,))
+
+# config.py
+---------
+Stores application configuration and environment variables.
+
+Examples:
+- API Keys
+- Database names
+- URLs
+- Settings
+
+# Environment Variables
+
+Purpose:
+Store secrets and configuration outside of source code.
+
+Examples:
+- API Keys
+- Database URLs
+- Passwords
+- Secret Keys
+
+Files:
+.env -> stores values
+config.py -> loads values
+
+Benefits:
+- Prevents hardcoding secrets
+- Easier configuration management
+- Safer for GitHub projects
+
+
+# tmdb_api.py
+
+The following piece of code creates a new list that will get the key value pairs of 'name' from each dictionary that was extracted from the list of production companies from the TMDB API. So it will print out each production company in its own index inside of a list. 
+creator = [
+        company['name']
+        for company in movie_data.get("production_companies", [])
+    ]
+
+# Shrek
+creator = ["Pacific Data Images", "DreamWorks Animation", "DreamWorks Pictures"]

@@ -1,6 +1,8 @@
 import requests
 import sqlite3
 
+from config import TMDB_API_KEY # Reference API Key
+
 def create_table(connection): # Create Media Table
     query ="""
     CREATE TABLE IF NOT EXISTS media(
@@ -74,10 +76,64 @@ def delete_media(connection): # Delete Media (Movies/Shows)
     except Exception as e:
         print(e)
 
+def search_movie(title: str):
+    url = "https://api.themoviedb.org/3/search/movie"
+
+    params = {
+        "api_key": TMDB_API_KEY,
+        "query": title
+    }
+
+    response = requests.get(url, params=params).json()
+
+    movie = response["results"][0] # Results has its own List
+    movie_data = get_details(movie.get("id"))
+
+    title = movie_data.get("title")
+    media_type = "movie"
+    creator = [
+        company['name']
+        for company in movie_data.get("production_companies", [])
+    ]
+    release_year = movie_data.get("release_date")
+    genre = [
+        genres['name']
+        for genres in movie_data.get("genres")
+    ]
+
+    runtime = movie_data.get("runtime")
+    image_url = movie_data.get("poster_path")
+    external_id = movie_data.get("id")
+
+
+    print(f"Title: {title}")
+    print(f"Media Type: {media_type}")
+    print(f"Creator: {creator}")
+    print(f"Release Year: {release_year}")
+    print(f"Genres: {genre}")
+    print(f"Length of Movie: {runtime}")
+    print(f"Image URL: {image_url}")
+    print(f"ID: {external_id}")
+
+
+def get_details(movie_id: int):
+    url = f"https://api.themoviedb.org/3/movie/{movie_id}"
+
+    params = {
+        "api_key": TMDB_API_KEY,
+    }
+
+    response = requests.get(url, params=params)
+    response.raise_for_status()
+
+    return response.json()
+
 def main():
     # Establish Database
     connection = sqlite3.connect("media.db")
     create_table(connection)
+
+    search_movie("Cinderella")
 
 if __name__ == '__main__':
     main()
